@@ -1,0 +1,244 @@
+GLhandleARB frag, prog;
+
+void initializeShaders(){
+	
+  frag = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+  glShaderSourceARB(frag, 1, &edgeFragSource, NULL);
+  glCompileShaderARB(frag);
+  
+  prog = glCreateProgramObjectARB();
+  glAttachObjectARB(prog, frag);
+  glLinkProgramARB(prog);
+  
+  glUniform1iARB( glGetUniformLocationARB(prog, "texture"), 0);
+  glUseProgramObjectARB(prog);
+	
+}  
+
+		/* Check for NPOT textures */
+		if (IsNPOT(temp->w, temp->h)) {
+			printf("NPOT texture, using special code for automatic padding\n");
+				
+			GLint wreal = 0, hreal = 0;
+			GLint xpad = 0, ypad = 0;
+			
+			wreal = (int)powf(2.0, ceilf(logf((float)temp->w)/logf(2.0f)));
+			hreal = (int)powf(2.0, ceilf(logf((float)temp->h)/logf(2.0f)));
+			xpad = (wreal - temp->w)/2;
+			ypad = (hreal - temp->h)/2;
+
+			printf("tex width = %d\n", wreal);
+			printf("tex height = %d\n", hreal);
+			
+			if (colorkey != NULL)
+				image = SDL_CreateRGBSurface(SDL_SWSURFACE, wreal, hreal, 32, rmask, gmask, bmask, amask);
+			else
+				image = SDL_CreateRGBSurface(SDL_SWSURFACE, wreal, hreal, 24, rmask, gmask, bmask, 0);
+			SDL_Rect dst = {xpad, ypad, temp->w, temp->h};
+
+			if (colorkey != NULL) {
+				key = SDL_MapRGB(temp->format, colorkey->r, colorkey->g, colorkey->b);
+				SDL_FillRect(image, NULL, key); /* Without GL_BLEND transparent areas will be like colorkey and not black */
+				SDL_SetColorKey(temp, SDL_SRCCOLORKEY, key);
+			}
+			SDL_BlitSurface(temp, 0, image, &dst);
+			SDL_FreeSurface(temp);
+		}
+		
+		
+/* Check for non-power-of-two textures */
+int IsNPOT(int width, int height)
+{
+	if ((int)powf(2.0f, ceilf(logf((float)width)/logf(2.0f))) != width)
+		return 1;
+	if ((int)powf(2.0f, ceilf(logf((float)height)/logf(2.0f))) != height)
+		return 1;
+	else
+		return 0;
+}
+
+
+
+/* Blit the sprite referring to the upper left corner but keeping the correct image center for further transformations */
+void BlitSprite(struct Sprite *sprite)
+{
+	GLint wreal, hreal;
+	GLint xpad=0, ypad=0;
+		
+	if(IsNPOT(sprite->w, sprite->h)) {
+		wreal = (int)powf(2.0, ceilf(logf((float)sprite->w)/logf(2.0f)));
+		hreal = (int)powf(2.0, ceilf(logf((float)sprite->h)/logf(2.0f)));
+		xpad = (wreal - sprite->w)/2;
+		ypad = (hreal - sprite->h)/2;
+	} else {
+		wreal = sprite->w;
+		hreal = sprite->h;
+	}	
+
+
+
+void GPU_BlitGlspriteOnBuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest)
+{
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+	int destx, desty;
+	destx = desty = 0;
+	if (dest){
+		destx = dest->x;
+		desty = dest->y;
+	}
+	GLint xpad=0, ypad=0;
+         
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, buf->fb);
+    {
+  	  //glEnable(GL_TEXTURE_2D);
+  	  //glPushAttrib(GL_VIEWPORT_BIT); 
+      //glViewport(0, 0, 512, 512);
+      
+     glMatrixMode(GL_TEXTURE);
+	 //glPushMatrix();
+     glLoadIdentity();
+     // glMatrixMode(GL_PROJECTION);
+      //glLoadIdentity();
+      glOrtho(0, 2*sprite->rect.w, 0, 2*sprite->rect.h, -1, 1);
+      //glOrtho(0, 512, 512, 0, -1, 1);
+      //gluOrtho2D(0, 512, 0, 512);
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+   
+      glClearColor(0, 0, 0, 0);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      //glColor3f(0.0, 1.0, 0.0);
+      glBindTexture(GL_TEXTURE_2D, sprite->texID);
+      glEnable(GL_TEXTURE_2D);
+      glBegin(GL_QUADS);
+        glTexCoord2f(0, 0); glVertex2f(0, 0);
+        glTexCoord2d(512, 0); glVertex2f(512, 0);
+        glTexCoord2d(512, 512); glVertex2f(512, 512);
+        glTexCoord2d(0, 512); glVertex2f(0, 512);
+     glEnd();
+    
+     //glMatrixMode(GL_TEXTURE);
+	 //glPopMatrix();    
+     //   glPopAttrib();
+    
+    }
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	
+	/*glMatrixMode(GL_TEXTURE);
+	glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, 2*sprite->rect.w, 0, 2*sprite->rect.h, -1, 1);
+	
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+*/
+    glViewport(0,0, 512, 512);
+    //glMatrixMode(GL_TEXTURE);
+	//glPushMatrix();
+   //glLoadIdentity();
+    
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    
+    //glOrtho(0, 512, 512, 0, -1, 1);
+    gluOrtho2D(0, 512, 0, 512);
+    glClearColor(0.2, 0.2, 0.2, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    //glLoadIdentity();
+
+    glBindTexture(GL_TEXTURE_2D, buf->tex);
+//    /glBindTexture(GL_TEXTURE_2D, sprite->texID);
+    glEnable(GL_TEXTURE_2D);
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_QUADS);
+    {
+        glTexCoord2f(0, 0); glVertex2f(0, 0);
+        glTexCoord2d(512, 0); glVertex2f(512, 0);
+        glTexCoord2d(512, 512); glVertex2f(512, 512);
+        glTexCoord2d(0, 512); glVertex2f(0, 512);
+    }
+    glEnd();																		
+	
+
+	//glDrawPixels(sprite->rect.w, sprite->rect.h, GL_RGB, GL_UNSIGNED_BYTE, sprite->image->pixels );
+	
+	//glMatrixMode(GL_TEXTURE);
+    //glPopMatrix();
+    
+ 
+}			
+
+
+static const char* endgeDetectionFragSource =
+"uniform sampler2D texture;													\n"
+"void main (void)															\n"
+"{																			\n"
+"	vec2 ox = vec2(512.0, 0.0);												\n"
+"	vec2 oy = vec2(0.0, 512.0);												\n"
+"	vec2 PP = gl_TexCoord[0].xy - oy;										\n"
+"	float g00 = texture2D(texture, PP - ox).x;								\n"
+"	float g01 = texture2D(texture, PP).x;									\n"
+"	float g02 = texture2D(texture, PP + ox).x;								\n"
+"	PP = gl_TexCoord[0].xy;													\n"
+"	float g10 = texture2D(texture, PP - ox).x;								\n"
+"	float g12 = texture2D(texture, PP + ox).x;								\n"
+"	PP = gl_TexCoord[0].xy + oy;											\n"
+"	float g20 = texture2D(texture, PP - ox).x;								\n"
+"	float g21 = texture2D(texture, PP).x;									\n"
+"	float g22 = texture2D(texture, PP + ox).x;								\n"
+"	float sx = g20 + g22 - g00 - g02 + 2 * (g21 - g01);						\n"
+"	float sy = g22 + g02 - g00 - g20 + 2 * (g12 - g10);						\n"
+"	float dist = (sx * sx) + (sy *sy);										\n"
+"	float tSq = 0.1 * 0.1;													\n"
+"	float result = 1;														\n"
+"	if (dist > 1000000)  result = 0.0; 											\n"
+"	gl_FragColor = vec4 (result, 0, 0, 1.0);                   \n"
+"}																			\n\0";
+
+
+static const char* laplacianFragSource =
+"uniform sampler2D texture;													\n"
+"void main (void)															\n"
+"{																			\n"
+"	vec2 texCoord = gl_TexCoord[0].xy;										\n"
+"	int i;																	\n"
+"	vec4 sum = vec4 (0.0);													\n"
+"	vec2 offSet[5];															\n"
+"	offSet[0] = vec2( -1/512.0,  0.0);										\n"
+"	offSet[3] = vec2(  0.0,  1/512.0);										\n"
+"	offSet[4] = vec2(  1/512.0,  0.0);											\n"
+"	offSet[1] = vec2(  0.0, -1/512.0);											\n"
+"	offSet[2] = vec2(  0.0,  0.0);											\n"
+"   vec4 KernelValue[5];													\n"
+"	KernelValue[0] = vec4(1.0);												\n"
+"	KernelValue[1] = vec4(1.0);												\n"
+"	KernelValue[2] = vec4(1.0);											\n"
+"	KernelValue[3] = vec4(1.0);												\n"
+"	KernelValue[4] = vec4(-4.0);												\n"
+"	for (i =0; i < 5; i++)													\n"
+"   {																		\n"
+"		vec4 tmp = (texture2D(texture, texCoord + offSet[i]));				\n"
+"		sum += tmp * KernelValue[i];										\n"
+"	}																		\n"
+"	vec4 baseColor = (texture2D(texture, texCoord));						\n"
+"	gl_FragColor = sum + baseColor;											\n"
+"}																			\n\0";
+
+static const char* colorCorrection =                      
+"uniform sampler2D texture;                                                                  \n"
+"void main (void)                                                                            \n"
+"{                                                                                           \n"
+"   vec3 pixelcolor = vec3(texture2D(texture, gl_TexCoord[0].st));                           \n"
+"   vec3 grayscale;                                                                          \n"
+"   grayscale.r = (pow( (pixelcolor.r*255.0 - 23) / (190 - 23), 0.61)* (255 -0) + 23)/255.0; \n"
+"   grayscale.g = (pow( (pixelcolor.g*255.0 - 23) / (190 - 23), 0.61)* (255 -0) + 23)/255.0; \n"
+"   grayscale.b = (pow( (pixelcolor.b*255.0 - 23) / (190 - 23), 0.61)* (255 -0) + 23)/255.0; \n"
+"	gl_FragColor = vec4 (grayscale, 1.0);                                                    \n"
+"}                                                                                           \n\0";
