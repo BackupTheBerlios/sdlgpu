@@ -57,25 +57,29 @@ enum { TARGET_TEXTURE_2D = 1 << 0,
 };
 
 
-void GPU_CheckGLErrors( );
+void GPU_PrintGLErrors( );
 
 int GPU_QueryExtension(char *extname);
 int GPU_Init();
 
-struct GPU_GlShader* GPU_ShaderInit(const char *vertex, const char* fragment);
+/*shader functions*/
+struct GPU_GlShader* GPU_InitShader(const char *vertex, const char* fragment);
 int GPU_SendTexture(struct GPU_GlShader *shader, char * texname, unsigned int position);
 int GPU_SendUniform1f(struct GPU_GlShader *shader, char *uniform, float value);
-void GPU_PrintShaderLog(struct GPU_GlShader *shader);
+GLcharARB* GPU_GetShaderLog(struct GPU_GlShader *shader);
+void GPU_FreeShader(struct GPU_GlShader *shader);
 
-struct GPU_Framebuffer *GPU_FramebufferInit(int textureflags, int sizex, int sizey);
+/*framebuffer functions*/
+struct GPU_Framebuffer *GPU_InitFramebuffer(int textureflags, int sizex, int sizey);
 void GPU_FreeFramebuffer(struct GPU_Framebuffer *buf);
 void GPU_BlitFramebufferOnScreen(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest);
 void GPU_BlitOnFramebuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest);
 SDL_Surface* GPU_FramebufferToSurface(struct GPU_Framebuffer *buf);
 int GPU_CheckFrameBufferStatus();
 
-struct GPU_Glsprite *GPU_AllocGlsprite(SDL_Surface *pixels, SDL_Color *colorkey, int textureflags);
-void GPU_BlitGlsprite( struct GPU_Glsprite *sprite, SDL_Rect *dest );
+/*sprite functions*/
+struct GPU_Glsprite *GPU_InitGlsprite(SDL_Surface *pixels, SDL_Color *colorkey, int textureflags);
+void GPU_DrawGlsprite( struct GPU_Glsprite *sprite, SDL_Rect *dest );
 int GPU_FreeGlsprite( struct GPU_Glsprite *sprite);
 
 #endif //_SDL_GPU_H_

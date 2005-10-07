@@ -93,10 +93,10 @@ void GPU_FreeFramebuffer(struct GPU_Framebuffer *buf)
 	glDeleteRenderbuffersEXT(1, &(buf->depthbufferID));
 	glDeleteTextures(1, &(buf->texID));
 	glDeleteFramebuffersEXT(1, &(buf->framebufferID));
-	
+	free(buf);
 }
 
-struct GPU_Framebuffer * GPU_FramebufferInit(int textureflags, int sizex, int sizey)
+struct GPU_Framebuffer * GPU_InitFramebuffer(int textureflags, int sizex, int sizey)
 {
 	struct GPU_Framebuffer *framebuffer = malloc( sizeof(struct GPU_Framebuffer ) );
 	framebuffer->depthbufferID = 0;
@@ -196,7 +196,7 @@ void GPU_BlitOnFramebuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *spr
 
      glPopMatrix();
 
-    glViewport(0, 0, 800, 600);
+   // glViewport(0, 0, 800, 600);
     
     }
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -219,7 +219,7 @@ void GPU_BlitFramebufferOnScreen(struct GPU_Framebuffer *buf, struct GPU_Glsprit
             glTexCoord2f(0, 1); glVertex3f(-1,  1, -0.5f);
     }
     glEnd();	
-    glViewport(0, 0, 800, 600); 
+ //   glViewport(0, 0, 800, 600); 
     glDisable(buf->textarget);														
 
 }	
@@ -262,7 +262,7 @@ SDL_Surface* GPU_FramebufferToSurface(struct GPU_Framebuffer *buf){
 }
 
 
-struct GPU_Glsprite *GPU_AllocGlsprite(SDL_Surface *pixels, SDL_Color *colorkey, int textureflags)
+struct GPU_Glsprite *GPU_InitGlsprite(SDL_Surface *pixels, SDL_Color *colorkey, int textureflags)
 {
     struct GPU_Glsprite *newsprite;
 	SDL_Surface *image;
@@ -321,6 +321,8 @@ struct GPU_Glsprite *GPU_AllocGlsprite(SDL_Surface *pixels, SDL_Color *colorkey,
 		glBindTexture(newsprite->textarget, (newsprite)->texID);
 		glTexParameteri(newsprite->textarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(newsprite->textarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		newsprite->sizex = image->w;
+		newsprite->sizey = image->h;
 		if (colorkey != NULL)
 			glTexImage2D(newsprite->textarget, 0, GL_RGBA, image->w, image->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
 		else
@@ -332,27 +334,26 @@ struct GPU_Glsprite *GPU_AllocGlsprite(SDL_Surface *pixels, SDL_Color *colorkey,
 	}
 	
 	else{
-		printf("sem pixels");
 		return 0;
 	}
 }
 
-void GPU_BlitGlsprite(struct GPU_Glsprite *sprite, SDL_Rect *dest)
+void GPU_DrawGlsprite(struct GPU_Glsprite *sprite, SDL_Rect *dest)
 {
 
-  glViewport(0, 0, 512, 512); 
+    glViewport(0, 0, sprite->sizex, sprite->sizey); 
 	glBindTexture(GL_TEXTURE_2D, sprite->texID);
 	glEnable(sprite->textarget);
+	
 	glBegin(GL_QUADS);
-
-			            glTexCoord2f(0, 0); glVertex3f(-1, -1, -0.5f);
+			glTexCoord2f(0, 0); glVertex3f(-1, -1, -0.5f);
             glTexCoord2f(1, 0); glVertex3f( 1, -1, -0.5f);
             glTexCoord2f(1, 1); glVertex3f( 1,  1, -0.5f);
             glTexCoord2f(0, 1); glVertex3f(-1,  1, -0.5f);
 	glEnd();																		
 	
 	glDisable(sprite->textarget);
-	  glViewport(0, 0, 800, 600); 
+	//glViewport(0, 0, 800, 600); 
 }
 
 int GPU_FreeGlsprite(struct GPU_Glsprite *sprite)
@@ -371,7 +372,8 @@ int GPU_FreeGlsprite(struct GPU_Glsprite *sprite)
 		return -1;
 }
 
-struct GPU_GlShader* GPU_ShaderInit(const char *vertex, const  char* fragment){
+struct GPU_GlShader* GPU_InitShader(const char *vertex, const  char* fragment)
+{
     
     struct GPU_GlShader *newshader = malloc(sizeof(struct GPU_GlShader));
     newshader->program = glCreateProgramObjectARB();
@@ -399,6 +401,14 @@ struct GPU_GlShader* GPU_ShaderInit(const char *vertex, const  char* fragment){
 	
 }
 
+void GPU_FreeShader(struct GPU_GlShader *shader)
+{
+	glDeleteObjectARB(shader->vertex);
+	glDeleteObjectARB(shader->fragment);
+	glDeleteObjectARB(shader->program);
+	free(shader);
+}
+
 int GPU_SendTexture(struct GPU_GlShader *shader, char *texname, unsigned int position)
 {
     GLint loc = glGetUniformLocationARB(shader->program, texname);
@@ -420,7 +430,7 @@ int GPU_SendUniform1f(struct GPU_GlShader *shader, char *uniform, float value)
 
 }
 
-void GPU_CheckGLErrors() 
+void GPU_PrintGLErrors() 
 {
 	GLuint errnum;
 	const char *errstr;
@@ -432,7 +442,7 @@ void GPU_CheckGLErrors()
 	return;
 }
 
-void GPU_PrintShaderLog(struct GPU_GlShader *shader)
+GLcharARB* GPU_GetShaderLog(struct GPU_GlShader *shader)
 {
 
 	int infologlen = 0;
@@ -446,8 +456,7 @@ void GPU_PrintShaderLog(struct GPU_GlShader *shader)
 		if (infolog == NULL)
 			return;
 		glGetInfoLogARB(shader->program, infologlen, &charswritten, infolog);
-		printf("Shader log: \n%s\n", infolog);
-		free(infolog);
+		return infolog;
 	}
 	
 }
