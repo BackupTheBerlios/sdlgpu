@@ -68,6 +68,8 @@ int GPU_SendTexture(struct GPU_GlShader *shader, char * texname, unsigned int po
 int GPU_SendUniform1f(struct GPU_GlShader *shader, char *uniform, float value);
 GLcharARB* GPU_GetShaderLog(struct GPU_GlShader *shader);
 void GPU_FreeShader(struct GPU_GlShader *shader);
+void GPU_BindShader(struct GPU_GlShader *shader);
+void GPU_UnbindShader();
 
 /*framebuffer functions*/
 struct GPU_Framebuffer *GPU_InitFramebuffer(int textureflags, int sizex, int sizey);

@@ -409,6 +409,16 @@ void GPU_FreeShader(struct GPU_GlShader *shader)
 	free(shader);
 }
 
+void GPU_BindShader(struct GPU_GlShader *shader)
+{
+	glUseProgramObjectARB(shader->program);
+}
+
+void GPU_UnbindShader()
+{
+	glUseProgramObjectARB(0);
+}
+
 int GPU_SendTexture(struct GPU_GlShader *shader, char *texname, unsigned int position)
 {
     GLint loc = glGetUniformLocationARB(shader->program, texname);
