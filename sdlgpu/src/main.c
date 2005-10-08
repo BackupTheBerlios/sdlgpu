@@ -59,38 +59,40 @@ int main(int argc, char **argv)
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glEnable(GL_DEPTH_TEST);
 
-//CheckErrorsGL();
 // initialize the glsprite
-    SDL_Surface *img = (SDL_Surface *) IMG_Load("lena.png");
+    SDL_Surface *img = (SDL_Surface *) IMG_Load("../data/lena.png");
     
 //	SDL_Color colorkey = {0xFF, 0x00, 0xFF, 0};
-	if ( (glsprite = (GPU_AllocGlsprite(img, 0, TARGET_TEXTURE_2D | FORMAT_RGB | TYPE_UNSIGNED_BYTE))) == 0 ) {
+	if ( (glsprite = (GPU_InitGlsprite(img, 0, TARGET_TEXTURE_2D | FORMAT_RGB | TYPE_UNSIGNED_BYTE))) == 0 ) {
 		fprintf(stderr, "Error loading the image file!\n");
 		exit(-1);		
 	}
 
-   // initializeShaders();
 	
-	buffer = GPU_FramebufferInit( TARGET_TEXTURE_2D | FORMAT_RGB | TYPE_UNSIGNED_BYTE, img->w, img->h );
-	shader = GPU_ShaderInit(0, wobbleFS);
-	glUseProgramObjectARB( shader->program);
-	GPU_PrintShaderLog(shader);
+	buffer = GPU_InitFramebuffer( TARGET_TEXTURE_2D | FORMAT_RGB | TYPE_UNSIGNED_BYTE, img->w, img->h );
+	shader = GPU_InitShader(0, invertFS);
+	GPU_BindShader(shader);
+	GLcharARB *log;
+	log = GPU_GetShaderLog(shader);
+	printf(log);
+	free(log);
 //	GPU_SendUniform1f(shader, "Alpha", 0.2f);
 	GPU_SendTexture(shader, "texture", 0);
-	GPU_SendUniform1f(shader, "texsize", 512.0);
-	GPU_SendUniform1f(shader, "numtiles", 40000.0);
-	GPU_SendUniform1f(shader, "edgewidth", 0.2);
+	//GPU_SendUniform1f(shader, "desaturate", 1.0);
+	//GPU_SendUniform1f(shader, "toning", 1.0);
+	//GPU_SendUniform1f(shader, "texsize", 512.0);
+	//GPU_SendUniform1f(shader, "scale", 2.0);
+	//GPU_SendUniform1f(shader, "numtiles", 400000.0);
+	//GPU_SendUniform1f(shader, "edgewidth", 0.5);
 
 
-	GPU_BlitOnFramebuffer(buffer, glsprite,  &dest);
-	glUseProgramObjectARB( 0);
+	GPU_BlitSpriteOnFramebuffer(buffer, glsprite,  &dest);
+	GPU_UnbindShader();
 	
 	SDL_Surface *img2 =GPU_FramebufferToSurface(buffer);
-	SDL_SaveBMP(img2, "teste2.bmp" );
-//	SDL_SaveBMP(GPU_FramebufferToSurface(buffer), "teste0.bmp" );
+	SDL_SaveBMP(img2, "LenaWithShader.bmp" );
 
-
-	if ( (glsprite2 = (GPU_AllocGlsprite(img2, 0, TARGET_TEXTURE_2D | FORMAT_RGB | TYPE_UNSIGNED_BYTE))) == 0 ) {
+	if ( (glsprite2 = (GPU_InitGlsprite(img2, 0, TARGET_TEXTURE_2D | FORMAT_RGB | TYPE_UNSIGNED_BYTE))) == 0 ) {
 		fprintf(stderr, "Error loading the image file!\n");
 		exit(-1);		
 	}
@@ -136,7 +138,7 @@ int main(int argc, char **argv)
 
         /* render */
 		 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		GPU_BlitGlsprite(glsprite2, 0);
+		GPU_DrawGlsprite(glsprite2, 0);
 		//GPU_BlitFramebufferOnScreen(buffer, glsprite2,  &dest);
 		
 		glFlush();
@@ -144,10 +146,12 @@ int main(int argc, char **argv)
 		
 	}
 
-	SDL_SaveBMP(GPU_FramebufferToSurface(buffer), "buffer2shaders.bmp" );
+//	SDL_SaveBMP(GPU_FramebufferToSurface(buffer), "buffer2shaders.bmp" );
 	
 // quit
     GPU_FreeGlsprite(glsprite);
+    GPU_FreeFramebuffer(buffer);
+    GPU_FreeShader(shader);
 	SDL_Quit();
 	return 0;	
 }
