@@ -73,9 +73,9 @@ void GPU_FreeShader(struct GPU_GlShader *shader);
 struct GPU_Framebuffer *GPU_InitFramebuffer(int textureflags, int sizex, int sizey);
 void GPU_FreeFramebuffer(struct GPU_Framebuffer *buf);
 void GPU_BlitFramebufferOnScreen(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest);
-void GPU_BlitOnFramebuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest);
+void GPU_BlitSpriteOnFramebuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest);
 SDL_Surface* GPU_FramebufferToSurface(struct GPU_Framebuffer *buf);
-int GPU_CheckFrameBufferStatus();
+char* GPU_GetFrameBufferStatus();
 
 /*sprite functions*/
 struct GPU_Glsprite *GPU_InitGlsprite(SDL_Surface *pixels, SDL_Color *colorkey, int textureflags);

@@ -46,41 +46,43 @@ int GPU_Init()
 	return 0;
 }
 
-int GPU_CheckFramebufferStatus()
+
+char * GPU_GetFramebufferStatus()
 {
     GLenum status;
     status = (GLenum) glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+    char *errormsg;
     switch(status) {
         case GL_FRAMEBUFFER_COMPLETE_EXT:
             return 0;
             break;
         case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-            printf("Unsupported framebuffer format\n");
-            return 1;
+            errormsg = "Unsupported framebuffer format\n\0";
+            return errormsg;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-            printf("Framebuffer incomplete, missing attachment\n");
-            return 2;
+            errormsg = "Framebuffer incomplete, missing attachment\n\0";
+            return errormsg;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_DUPLICATE_ATTACHMENT_EXT:
-            printf("Framebuffer incomplete, duplicate attachment\n");
-            return 3;
+            errormsg = "Framebuffer incomplete, duplicate attachment\n\0";
+            return errormsg;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-            printf("Framebuffer incomplete, attached images must have same dimensions\n");
-            return 4;
+            errormsg = "Framebuffer incomplete, attached images must have same dimensions\n\0";
+            return errormsg;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-            printf("Framebuffer incomplete, attached images must have same format\n");
-            return 5;
+        	errormsg = "Framebuffer incomplete, attached images must have same format\n\0";
+            return errormsg;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-            printf("Framebuffer incomplete, missing draw buffer\n");
-            return 6;
+        	errormsg = "Framebuffer incomplete, missing draw buffer\n\0";
+            return errormsg;
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-            printf("Framebuffer incomplete, missing read buffer\n");
-            return 7;
+        	errormsg = "Framebuffer incomplete, missing read buffer\n\0";
+            return errormsg;
             break;
         default:
             assert(0);
@@ -90,7 +92,7 @@ int GPU_CheckFramebufferStatus()
 void GPU_FreeFramebuffer(struct GPU_Framebuffer *buf)
 {
 	
-	glDeleteRenderbuffersEXT(1, &(buf->depthbufferID));
+//	glDeleteRenderbuffersEXT(1, &(buf->depthbufferID));
 	glDeleteTextures(1, &(buf->texID));
 	glDeleteFramebuffersEXT(1, &(buf->framebufferID));
 	free(buf);
@@ -141,7 +143,7 @@ struct GPU_Framebuffer * GPU_InitFramebuffer(int textureflags, int sizex, int si
 	//initialize framebuffer struct
     glGenFramebuffersEXT(1, &(framebuffer->framebufferID)); 
     glGenTextures(1, &(framebuffer->texID));
-    glGenRenderbuffersEXT(1, &(framebuffer->depthbufferID)); 
+  //  glGenRenderbuffersEXT(1, &(framebuffer->depthbufferID)); 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebuffer->framebufferID);
 
     //initialize texture
@@ -149,25 +151,23 @@ struct GPU_Framebuffer * GPU_InitFramebuffer(int textureflags, int sizex, int si
     glTexImage2D(framebuffer->textarget, 0, internalformat, sizex, sizey, 0, format, type, NULL);
     glTexParameterf(framebuffer->textarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexParameterf(framebuffer->textarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, framebuffer->textarget, framebuffer->texID, 0);
 
     // initialize depth renderbuffer
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, framebuffer->depthbufferID);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, sizex, sizey);
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, 
-                                 GL_RENDERBUFFER_EXT, framebuffer->depthbufferID); 
+  //  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, framebuffer->depthbufferID);
+  //  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, sizex, sizey);
+  //  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, 
+    //                             GL_RENDERBUFFER_EXT, framebuffer->depthbufferID); 
                                  
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	glBindTexture(framebuffer->textarget, 0);
 	
-	GPU_CheckFramebufferStatus();
+	printf(GPU_GetFramebufferStatus());
 	
 	return framebuffer;
 }
 
-void GPU_BlitOnFramebuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest)
+void GPU_BlitSpriteOnFramebuffer(struct GPU_Framebuffer *buf, struct GPU_Glsprite *sprite, SDL_Rect *dest)
 {
 	
     glBindTexture(buf->textarget, 0);
